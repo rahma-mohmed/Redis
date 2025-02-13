@@ -1,0 +1,7 @@
+﻿RediSearch use compressed, inverted indexes to store the data. This means that the data is stored in a compressed format, which is then indexed and stored in a way that allows for fast retrieval. This allows for fast search and retrieval of data, even when the data set is very large. The compressed, inverted indexes: mapping between memory and value
+Redisearch query language
+exact match, fuzzy match
+autocomplete engine
+
+NRedisSearch (C# nuget package)
+docker run -d --name redis-search -p 6379:6379 redislabs/redisearch:latest
