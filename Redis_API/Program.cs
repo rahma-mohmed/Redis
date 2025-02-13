@@ -16,6 +16,18 @@ namespace Redis_API
 			// Add memory cache services
 			builder.Services.AddMemoryCache();
 
+			#region redis distributed cache
+			builder.Services.AddStackExchangeRedisCache(options =>
+			{
+				options.Configuration = "localhost:6379";
+				options.InstanceName = "SampleInstance";
+			});
+
+			// options.Configuration = "localhost:6379" is the port of redis server
+
+			builder.Services.AddSession();
+			#endregion
+
 			#endregion
 
 			var app = builder.Build();
@@ -30,6 +42,7 @@ namespace Redis_API
 
 			app.UseAuthorization();
 
+			app.UseSession();
 
 			app.MapControllers();
 
