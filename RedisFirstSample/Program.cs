@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json;
 using NRedisStack;
 using NRedisStack.RedisStackCommands;
+using NRedisStack.Search;
+using NRedisStack.Search.Aggregation;
 using StackExchange.Redis;
 
 /*
@@ -8,7 +10,116 @@ using StackExchange.Redis;
  */
 
 // Connect to the server (localhost)
-ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost");
+ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost,allowAdmin=true");
+var endpoints = redis.GetEndPoints();
+var server = redis.GetServer(endpoints.FirstOrDefault());
+
+server.FlushDatabase(); // to delete all keys in the database (flushall command)
+
+#region Contant
+
+IDatabase db = redis.GetDatabase();
+ISearchCommands ft = db.FT(); // is then used to create and manage search indexes
+var json = db.JSON();
+
+#endregion
+
+#region Redis in C#
+
+fillData(db);
+GroupByCity(db);
+
+
+void fillData(IDatabase db)
+{
+	var user1 = new
+	{
+		name = "Ali",
+		email = "Ali@gmail.com",
+		age = 25,
+		city = "Cairo"
+	};
+	var user2 = new
+	{
+		name = "Asmaa",
+		email = "asmaa@gmail.com",
+		age = 23,
+		city = "Alex"
+	};
+	var user3 = new
+	{
+		name = "Rahma",
+		email = "rahma@gmail.com",
+		age = 22,
+		city = "Tanta"
+	};
+	var user4 = new
+	{
+		name = "Mohmed",
+		email = "mohmed@gmail.com",
+		age = 21,
+		city = "Tanta"
+	};
+
+	var schema = new Schema()
+		.AddTextField(new FieldName("$.name", "name"))
+		.AddTagField(new FieldName("$.email", "email"))
+		.AddTagField(new FieldName("$.city", "city"))
+		.AddNumericField(new FieldName("$.age", "age"));
+
+
+	// create index to every key start with user:
+	ft.Create(
+		"idx:users",
+		new FTCreateParams().On(NRedisStack.Search.Literals.Enums.IndexDataType.JSON).Prefix("user:"),
+		schema);
+
+	json.Set("user:1", "$", user1);
+	json.Set("user:2", "$", user2);
+	json.Set("user:3", "$", user3);
+	json.Set("user:4", "$", user4);
+}
+
+void SearchByAge(IDatabase db)
+{
+	Console.WriteLine("******************Search by age********************");
+
+	var result = ft.Search("idx:users", new Query("@age:[25 30]")).Documents.Select(x => x["json"]);
+	Console.WriteLine(string.Join("\n", result));
+}
+
+void SearchByName(IDatabase db)
+{
+	Console.WriteLine("******************Search by name********************");
+
+	var result = ft.Search("idx:users", new Query("Rahma")).Documents.Select(x => x["json"]);
+	Console.WriteLine(string.Join("\n", result));
+}
+
+// only return city
+void SearchByNameAndReturnCity(IDatabase db)
+{
+	Console.WriteLine("******************Search by name and return city********************");
+
+	var result = ft.Search("idx:users", new Query("Rahma").ReturnFields(new FieldName("$.city", "city"))).Documents.Select(x => x["city"]);
+	Console.WriteLine(string.Join("\n", result));
+}
+
+void GroupByCity(IDatabase db)
+{
+	Console.WriteLine("******************Group by city********************");
+
+	var request = new AggregationRequest("*").GroupBy("@city", Reducers.Count().As("count"));
+	var result = ft.Aggregate("idx:users", request);
+
+	for (var i = 0; i < result.TotalResults; i++)
+	{
+		var row = result.GetRow(i);
+		Console.WriteLine(row["city"] + " = " + row["count"]);
+	}
+}
+
+#endregion
 
 var options = new ConfigurationOptions
 {
@@ -67,7 +178,7 @@ to get instance of ITransaction use IDatabase.GetTransaction()
 
 
 // Get a reference to the database (connect to database)
-IDatabase db = redis.GetDatabase();
+//IDatabase db = redis.GetDatabase();
 
 //to make transaction
 async Task TransactionSampleAsync(IDatabase db)
@@ -89,7 +200,7 @@ async Task TransactionSampleAsync(IDatabase db)
 	var success = transaction.Execute();
 }
 
-XADDSample(db);
+//XADDSample(db);
 
 void SimpleStringSample(IDatabase db)
 {
