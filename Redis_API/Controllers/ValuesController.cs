@@ -4,7 +4,7 @@ using Microsoft.Extensions.Caching.Memory;
 namespace Redis_API.Controllers
 {
 	[ApiController]
-	[Route("[controller]")]
+	[Route("api/values")]
 	public class ValuesController : ControllerBase
 	{
 		public IMemoryCache _memoryCache { get; }
@@ -14,7 +14,7 @@ namespace Redis_API.Controllers
 			_memoryCache = memoryCache;
 		}
 
-		[HttpGet(Name = "GetSetValuesList")]
+		[HttpGet("set-values-list", Name = "GetSetValuesList")]
 		public IEnumerable<int> GetSetValuesList()
 		{
 			string cacheEntry = "Values";
@@ -35,7 +35,7 @@ namespace Redis_API.Controllers
 			return values;
 		}
 
-		[HttpGet(Name = "GetValuesList_GetOrCreateAsync")]
+		[HttpGet("get-or-create-async", Name = "GetValuesList_GetOrCreateAsync")]
 		public async Task<IEnumerable<int>> GetValuesList_GetOrCreateAsync()
 		{
 			string cacheEntry = "Values";
@@ -49,7 +49,7 @@ namespace Redis_API.Controllers
 			return cacheValue;
 		}
 
-		[HttpGet(Name = "GetValuesList_PostEvictionCallback")]
+		[HttpGet("post-eviction-callback", Name = "GetValuesList_PostEvictionCallback")]
 		public IEnumerable<int> GetValuesList_PostEvictionCallback()
 		{
 			string cacheEntry = "Values";
@@ -68,7 +68,7 @@ namespace Redis_API.Controllers
 			return values;
 		}
 
-		[HttpGet(Name = "GetValuesList_PostEvictionCallbackMethod")]
+		[HttpGet("post-eviction-callback-method", Name = "GetValuesList_PostEvictionCallbackMethod")]
 		public IEnumerable<int> GetValuesList_PostEvictionCallbackMethod()
 		{
 			string cacheEntry = "Values";
